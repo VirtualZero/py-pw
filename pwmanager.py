@@ -438,8 +438,10 @@ def check_for_db():
         preloader = True
         wait = threading.Thread(target=loader, daemon=True)
         wait.start()
+
         create_new_db()
         encrypt_db(gpg_passphrase)
+
         preloader = False
         wait.join()
 
@@ -448,8 +450,10 @@ def check_for_db():
         preloader = True
         wait = threading.Thread(target=loader, daemon=True)
         wait.start()
+
         decrypt_db(gpg_passphrase)
         encrypt_db(gpg_passphrase)
+
         preloader = False
         wait.join()
 
@@ -565,9 +569,12 @@ def main():
                 preloader = True
                 wait = threading.Thread(target=loader, daemon=True)
                 wait.start()
+
                 encrypt_db(gpg_passphrase)
+
                 preloader = False
                 wait.join()
+
             except FileNotFoundError:
                 pass
 
