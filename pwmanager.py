@@ -5,8 +5,9 @@ import string
 import secrets
 from sqlite3 import IntegrityError
 import subprocess
+from time import sleep
+import threading
 from crypto import encrypt_db, decrypt_db
-import bcrypt
 from db_utils import (create_new_db,
                       add_new_creds,
                       view_all_creds,
@@ -15,6 +16,28 @@ from db_utils import (create_new_db,
                       update_creds_by_account_name)
 
 gpg_passphrase = ""
+preloader = ""
+
+def loader():
+    global preloader
+
+    while preloader == True:
+        print("|", end="\r")
+        sleep(.25)
+
+        if preloader == True:
+            print("/", end="\r")
+            sleep(.25)
+
+        if preloader == True:
+            print("-", end="\r")
+            sleep(.25)
+
+        if preloader == True:
+            print("\\", end="\r")
+            sleep(.25)
+
+        print(" ", end="\r")
 
 def get_pw_method():
     valid = False
@@ -72,14 +95,23 @@ def get_field_choice():
             print("\n[ERROR] You must choose 1, 2, or 3.")
 
 def get_id():
+    global preloader
+    preloader = True
+    wait = threading.Thread(target=loader, daemon=True)
+    wait.start()
+
     if os.path.isfile('pwmanager.sqlite3.gpg'):
-                decrypt_db(gpg_passphrase)
+        decrypt_db(gpg_passphrase)
 
     view_all_creds()
     total_creds = count_creds()
 
     if not os.path.isfile('pwmanager.sqlite3.gpg'):
-                encrypt_db(gpg_passphrase)
+
+        encrypt_db(gpg_passphrase)
+
+    preloader = False
+    wait.join()
 
     valid = False
 
@@ -287,6 +319,7 @@ def create_pw(pw_length, pw_chars):
     return pw
 
 def create_new_creds():
+    global preloader
     valid = False
 
     while valid == False:
@@ -297,6 +330,10 @@ def create_new_creds():
         pw = create_pw(pw_length, pw_chars)
 
         try:
+            preloader = True
+            wait = threading.Thread(target=loader, daemon=True)
+            wait.start()
+
             if os.path.isfile('pwmanager.sqlite3.gpg'):
                 decrypt_db(gpg_passphrase)
             
@@ -305,11 +342,22 @@ def create_new_creds():
             if not os.path.isfile('pwmanager.sqlite3.gpg'):
                 encrypt_db(gpg_passphrase)
 
+            preloader = False
+            wait.join()
+
             valid = True
+
         except IntegrityError:
             print("\n[ERROR] Account or service name already exists.")
+            preloader = True
+            wait = threading.Thread(target=loader, daemon=True)
+            wait.start()
+
             if not os.path.isfile('pwmanager.sqlite3.gpg'):
-                    encrypt_db(gpg_passphrase)
+                encrypt_db(gpg_passphrase)
+
+            preloader = False
+            wait.join()
 
 def update_creds_method():
     valid = False
@@ -333,9 +381,14 @@ def update_creds_method():
             print("\n[ERROR] You must choose 1 or 2.")
 
 def add_existing_creds():
+    global preloader
     account_name = get_account_name()
     username = get_username()
     pw = get_password()
+
+    preloader = True
+    wait = threading.Thread(target=loader, daemon=True)
+    wait.start()
 
     if os.path.isfile('pwmanager.sqlite3.gpg'):
         decrypt_db(gpg_passphrase)
@@ -344,6 +397,9 @@ def add_existing_creds():
 
     if not os.path.isfile('pwmanager.sqlite3.gpg'):
         encrypt_db(gpg_passphrase)
+
+    preloader = False
+    wait.join()
 
 def choose_action():
     valid = False
@@ -374,20 +430,32 @@ def choose_action():
         
 def check_for_db():
     global gpg_passphrase
+    global preloader
 
     if not os.path.isfile('pwmanager.sqlite3.gpg'):
         print("\nIt looks like this is the first run.")
         gpg_passphrase = str(input("Enter a passphrase to access your credentials: "))
+        preloader = True
+        wait = threading.Thread(target=loader, daemon=True)
+        wait.start()
         create_new_db()
         encrypt_db(gpg_passphrase)
+        preloader = False
+        wait.join()
 
     else:
         gpg_passphrase = str(input("\nEnter the passphrase to unlock your credentials: "))
+        preloader = True
+        wait = threading.Thread(target=loader, daemon=True)
+        wait.start()
         decrypt_db(gpg_passphrase)
         encrypt_db(gpg_passphrase)
+        preloader = False
+        wait.join()
 
 def main():
     global gpg_passphrase
+    global preloader
 
     try:
         check_for_db()
@@ -400,6 +468,10 @@ def main():
             add_existing_creds()
 
         elif action_choice == 3:
+            preloader = True
+            wait = threading.Thread(target=loader, daemon=True)
+            wait.start()
+
             if os.path.isfile('pwmanager.sqlite3.gpg'):
                 decrypt_db(gpg_passphrase)
 
@@ -407,6 +479,9 @@ def main():
 
             if not os.path.isfile('pwmanager.sqlite3.gpg'):
                 encrypt_db(gpg_passphrase)
+
+            preloader = False
+            wait.join()
 
         elif action_choice == 4:
             method_choice = update_creds_method()
@@ -432,6 +507,10 @@ def main():
                     elif pw_method == 2:
                         new_cred = get_password()
 
+                preloader = True
+                wait = threading.Thread(target=loader, daemon=True)
+                wait.start()
+
                 if os.path.isfile('pwmanager.sqlite3.gpg'):
                             decrypt_db(gpg_passphrase)
 
@@ -439,6 +518,9 @@ def main():
 
                 if not os.path.isfile('pwmanager.sqlite3.gpg'):
                     encrypt_db(gpg_passphrase)
+
+                preloader = False
+                wait.join()
 
             elif method_choice == 2:
                 account_name = get_account_name()
@@ -461,6 +543,10 @@ def main():
                     elif pw_method == 2:
                         new_cred = get_password()
 
+                preloader = True
+                wait = threading.Thread(target=loader, daemon=True)
+                wait.start()
+
                 if os.path.isfile('pwmanager.sqlite3.gpg'):
                             decrypt_db(gpg_passphrase)
 
@@ -468,11 +554,22 @@ def main():
 
                 if not os.path.isfile('pwmanager.sqlite3.gpg'):
                     encrypt_db(gpg_passphrase)
+
+                preloader = False
+                wait.join()
             
     except KeyboardInterrupt:
         print("\nGoodbye.")
         if not os.path.isfile('pwmanager.sqlite3.gpg'):
-            encrypt_db(gpg_passphrase)
+            try:
+                preloader = True
+                wait = threading.Thread(target=loader, daemon=True)
+                wait.start()
+                encrypt_db(gpg_passphrase)
+                preloader = False
+                wait.join()
+            except FileNotFoundError:
+                pass
 
         exit(0)
 
