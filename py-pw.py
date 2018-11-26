@@ -7,6 +7,7 @@ from sqlite3 import IntegrityError
 import subprocess
 from time import sleep
 import threading
+import getpass
 from crypto import encrypt_db, decrypt_db
 from db_utils import (create_new_db,
                       add_new_creds,
@@ -587,7 +588,7 @@ def check_for_db():
 
     if not os.path.isfile('pwmanager.sqlite3.gpg'):
         print("\nIt looks like this is the first run.")
-        gpg_passphrase = str(input("Enter a passphrase to access your credentials: "))
+        gpg_passphrase = str(getpass.getpass("Enter a passphrase to access your credentials: "))
         preloader = True
         wait = threading.Thread(target=loader, daemon=True)
         wait.start()
@@ -599,7 +600,7 @@ def check_for_db():
         wait.join()
 
     else:
-        gpg_passphrase = str(input("\nEnter the passphrase to unlock your credentials: "))
+        gpg_passphrase = str(getpass.getpass("\nEnter the passphrase to unlock your credentials: "))
         preloader = True
         wait = threading.Thread(target=loader, daemon=True)
         wait.start()
